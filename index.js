@@ -6,6 +6,11 @@ const JA_BASE_URL = 'https://dont-starve.fandom.com/ja';
 const EN_BASE_URL = 'https://dontstarve.fandom.com';
 const WAIT_MSEC = 200;
 
+const HEADER = `
+この記事は、[https://github.com/manaten/DSWikiDifference プログラム] を用いて日本語版Wikiと英語版Wikiのページ一覧を比較し、英語版にしかないページの一覧をリストにしたものです。
+
+----\n\n`;
+
 const wait = (msec = WAIT_MSEC) => new Promise(resolve => setTimeout(resolve, msec));
 
 const listAllEntries = async (baseUrl) => {
@@ -27,7 +32,13 @@ const getEntryAsSimpleJson = async (id, baseUrl = EN_BASE_URL) => {
   return data;
 };
 
+const isImportantPage = (title) =>
+  !/^Don't Starve Wiki/.test(title)
+  && !/^Guides/.test(title)
+  && !/quotes$/.test(title);
+
 const main = async () => {
+  console.log(HEADER);
 
   console.log(`ページ更新時刻: '''${dateFormat(new Date(), "yyyy年mm月dd日 HH時MM分ss秒")}'''`);
   console.log('\n');
@@ -59,11 +70,16 @@ const main = async () => {
     await wait();
   }
 
+  
   console.log('==通常のページ==');
-  console.log(result.filter(i => !i.isRedirect).map(item => `* [[${item.title}]] ({{en|${item.title}|英語}})`).join('\n'));
+  console.log(result.filter(i => !i.isRedirect).filter(i => isImportantPage(i.title)).map(item => `* [[${item.title}]] ({{en|${item.title}|英語}})`).join('\n'));
   
   console.log('\n');
-  console.log('==リダイレクトページ==');
-  console.log(result.filter(i => i.isRedirect).map(item => `* [[${item.title}]] ({{en|${item.title}|英語}}) => [[${item.redirectTo}]] ({{en|${item.redirectTo}|英語}})`).join('\n'));
+  console.log('===重要でなさそうなページ(独断と偏見)===');
+  console.log(result.filter(i => !i.isRedirect).filter(i => !isImportantPage(i.title)).map(item => `* [[${item.title}]] ({{en|${item.title}|英語}})`).join('\n'));
+  
+  // console.log('\n');
+  // console.log('==リダイレクトページ==');
+  // console.log(result.filter(i => i.isRedirect).map(item => `* [[${item.title}]] ({{en|${item.title}|英語}}) => [[${item.redirectTo}]] ({{en|${item.redirectTo}|英語}})`).join('\n'));
 };
 main().catch(e => console.error(e));
